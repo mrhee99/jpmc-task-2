@@ -8,6 +8,8 @@ import './App.css';
  */
 interface IState {
   data: ServerRespond[],
+  // changing the static table into a live graph.
+  showGraph: boolean,
 }
 
 /**
@@ -22,6 +24,8 @@ class App extends Component<{}, IState> {
       // data saves the server responds.
       // We use this state to parse data down to the child element (Graph) as element property
       data: [],
+      // to make the graph only show up once the user clicks on 'Start Streaming Data'.
+      showGraph: false,
     };
   }
 
@@ -29,20 +33,37 @@ class App extends Component<{}, IState> {
    * Render Graph react component with state.data parse as property data
    */
   renderGraph() {
-    return (<Graph data={this.state.data}/>)
+    // if the user clicks on 'Start Streaming Data', render the graph.
+    if (this.state.showGraph){
+      return (<Graph data={this.state.data}/>)
+    }
   }
 
   /**
    * Get new data from server and update the state with the new data
    */
   getDataFromServer() {
-    DataStreamer.getData((serverResponds: ServerRespond[]) => {
-      // Update the state by creating a new array of data that consists of
-      // Previous data in the state and the new data from server
-      this.setState({ data: [...this.state.data, ...serverResponds] });
-    });
+    // start with 0 data point.
+    let x = 0;
+    // setting up interval.
+    const interval = setInterval (() => {
+      DataStreamer.getData((serverResponds: ServerRespond[]) => {
+        // when the server responds and 'Start Streaming Data' button is clicked,
+        this.setState({
+          data: serverResponds,
+          showGraph: true,
+        });
+     });
+    // iterate the action.
+     x++;
+     // if it reaches to 1000 data points, cancels the interval action.  
+     if (x>1000) {
+      clearInterval(interval);
+     }
+    // displaying the data every 100 milliseconds
+    }, 100);
   }
-
+  
   /**
    * Render the App react component
    */
